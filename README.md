@@ -1,8 +1,9 @@
-# Pingcast Hybrid Media Platform
+# Pingcast
+# Hybrid Streaming Platform
 
-게임 스트리밍 플랫폼의 media infrastructure 구현 증거를 정리한 repository입니다.
+스트리밍 플랫폼의 media infrastructure 구현 증거를 정리한 repository입니다.
 
-상세한 설계 의도, 트러블슈팅, 운영 기준은 별도 문서로 분리하고, README는 repository 구조를 빠르게 파악하기 위한 안내용으로만 사용합니다.
+README는 repository 구조를 빠르게 파악하기 위한 안내용으로 사용합니다.
 
 ## Directory Guide
 
