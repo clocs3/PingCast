@@ -3,7 +3,7 @@
 
 스트리밍 플랫폼의 media infrastructure 구현 증거를 정리한 repository입니다.
 
-README는 repository 구조를 빠르게 파악하기 위한 안내용으로 사용합니다.
+repository 구조를 빠르게 파악하기 위한 안내입니다.
 
 ## Directory Guide
 
