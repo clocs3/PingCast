@@ -1,0 +1,77 @@
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+prometheus.receive_http "ingest" {
+  http {
+    listen_address = "0.0.0.0"
+    listen_port    = 9090
+  }
+  forward_to = [prometheus.remote_write.default.receiver]
+}
+
+prometheus.remote_write "default" {
+  endpoint {
+    url = "http://prometheus:9090/api/v1/write"
+  }
+}
+
+prometheus.scrape "alloy" {
+  targets = [
+    {
+      __address__ = "127.0.0.1:12345",
+      job         = "alloy-central",
+    },
+  ]
+  forward_to = [prometheus.remote_write.default.receiver]
+}
+
+loki.write "default" {
+  endpoint {
+    url = "http://loki:3110/loki/api/v1/push"
+  }
+}
+
+loki.source.api "ingest" {
+  http {
+    listen_address = "0.0.0.0"
+    listen_port    = 3100
+  }
+  forward_to = [loki.write.default.receiver]
+  use_incoming_timestamp = true
+}
+
+otelcol.exporter.loki "logs" {
+  forward_to = [loki.write.default.receiver]
+}
+
+otelcol.receiver.otlp "otlp" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+
+  output {
+    logs   = [otelcol.processor.batch.default.input]
+    traces = [otelcol.processor.batch.default.input]
+  }
+}
+
+otelcol.processor.batch "default" {
+  output {
+    logs   = [otelcol.exporter.loki.logs.input]
+    traces = [otelcol.exporter.otlp.tempo.input]
+  }
+}
+
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = "tempo:4317"
+    tls {
+      insecure = true
+    }
+  }
+}

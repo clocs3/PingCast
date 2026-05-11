@@ -1,0 +1,8 @@
+flowchart TD
+  Controller["stream-controller"] --> PodNode["Find ffmpeg Job node"]
+  PodNode --> HlsPod["Find nginx-hls on same node"]
+  HlsPod --> RedisRoute["Redis hls:route:{stream_key} = node-ip:8081"]
+  Request["Viewer /{user_id}/{started_at}/index.m3u8"] --> Router["hls-router"]
+  Router --> Session["Redis hls:session:{user_id}:{started_at}"]
+  Session --> RedisRoute
+  RedisRoute --> Proxy["Proxy to exact nginx-hls target"]

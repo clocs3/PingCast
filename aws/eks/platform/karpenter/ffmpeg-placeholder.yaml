@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ffmpeg-placeholder
+  namespace: ns-media
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ffmpeg-placeholder
+  template:
+    metadata:
+      labels:
+        app: ffmpeg-placeholder
+      annotations:
+        karpenter.sh/do-not-disrupt: "true"
+    spec:
+      tolerations:
+        - key: workload
+          operator: Equal
+          value: ffmpeg
+          effect: NoSchedule
+      nodeSelector:
+        workload: ffmpeg
+      terminationGracePeriodSeconds: 0
+      containers:
+        - name: pause
+          image: public.ecr.aws/eks-distro/kubernetes/pause:3.7
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "50m"
+              memory: "64Mi"

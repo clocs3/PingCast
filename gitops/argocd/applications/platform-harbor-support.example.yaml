@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-harbor-support
+  namespace: argocd
+spec:
+  project: pingcast
+  source:
+    repoURL: ssh://git@gitlab.example.com:2222/pingcast/deploy-vpc1.git
+    targetRevision: main
+    path: platform/cluster-support/harbor-bootstrap
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,161 @@
+groups:
+  - name: platform-health
+    rules:
+      - alert: PrometheusTargetDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prometheus target down"
+          description: "Instance {{ $labels.instance }} (job={{ $labels.job }}) is down."
+
+  - name: media-onprem
+    rules:
+      - alert: OnpremRtmpIngestMissing
+        expr: count(sum by (pod) (container_last_seen{cluster="onprem", namespace="ns-media-onprem", pod=~"nginx-rtmp.*", container!="", container!="POD"})) < 1
+        for: 2m
+        labels:
+          severity: critical
+          service: media-ingest
+        annotations:
+          summary: "On-prem RTMP ingest stage missing"
+          description: "No nginx-rtmp pod metrics observed in the on-prem media namespace."
+
+      - alert: OnpremStreamControllerMissing
+        expr: count(sum by (pod) (container_last_seen{cluster="onprem", namespace="ns-media-onprem", pod=~"stream-controller.*", container!="", container!="POD"})) < 1
+        for: 2m
+        labels:
+          severity: critical
+          service: media-controller
+        annotations:
+          summary: "On-prem stream-controller missing"
+          description: "No stream-controller pod metrics observed in the on-prem media namespace."
+
+      - alert: OnpremHlsDeliveryMissing
+        expr: count(sum by (pod) (container_last_seen{cluster="onprem", namespace="ns-media-onprem", pod=~"nginx-hls.*|hls-router.*", container!="", container!="POD"})) < 2
+        for: 2m
+        labels:
+          severity: critical
+          service: media-delivery
+        annotations:
+          summary: "On-prem HLS delivery path missing"
+          description: "nginx-hls and hls-router should be present only in the on-prem media line."
+
+      - alert: OnpremHlsRouteResolveFailed
+        expr: max(hls_route_error_streams{cluster="onprem", namespace="ns-media-onprem"} or vector(0)) > 0
+        for: 1m
+        labels:
+          severity: warning
+          service: media-delivery
+        annotations:
+          summary: "HLS route resolution failed"
+          description: "At least one live stream could not resolve a node-local HLS target."
+
+  - name: media-aws-burst
+    rules:
+      - alert: AwsBurstRtmpIngestMissing
+        expr: count(sum by (pod) (container_last_seen{cluster="aws", namespace="ns-media", pod=~"nginx-rtmp.*", container!="", container!="POD"})) < 1
+        for: 2m
+        labels:
+          severity: warning
+          service: media-burst
+        annotations:
+          summary: "AWS burst RTMP ingress missing"
+          description: "AWS burst line should expose nginx-rtmp through an NLB."
+
+      - alert: AwsBurstControllerMissing
+        expr: count(sum by (pod) (container_last_seen{cluster="aws", namespace="ns-media", pod=~"stream-controller.*", container!="", container!="POD"})) < 1
+        for: 2m
+        labels:
+          severity: warning
+          service: media-burst
+        annotations:
+          summary: "AWS burst stream-controller missing"
+          description: "AWS burst line needs stream-controller to validate publishers and start ffmpeg jobs."
+
+  - name: steering-burst-control
+    rules:
+      - alert: SteeringTrigger
+        expr: |
+          (
+            max(control_steering_enabled{cluster="onprem", namespace="ns-media-onprem"} or vector(0)) == 0
+          )
+          and
+          (
+            count(sum by (pod) (container_last_seen{cluster="onprem", namespace="ns-media-onprem", pod=~"nginx-rtmp.*|stream-controller.*", container!="", container!="POD"})) >= 1
+          )
+          and
+          (
+            max(active_publishers{cluster="onprem", namespace="ns-media-onprem"} or vector(0)) >= 2
+          )
+        for: 1m
+        labels:
+          severity: warning
+          service: media-steering
+          control_action: steering_on
+        annotations:
+          summary: "Enable viewer steering"
+          description: "Viewer traffic should move to CDN when on-prem active publishers remain above the threshold."
+
+      - alert: SteeringRecover
+        expr: |
+          (
+            max(control_steering_enabled{cluster="onprem", namespace="ns-media-onprem"} or vector(0)) == 1
+          )
+          and
+          (
+            max(control_burst_enabled{cluster="onprem", namespace="ns-media-onprem"} or vector(0)) == 0
+          )
+          and
+          (
+            max(active_publishers{cluster="onprem", namespace="ns-media-onprem"} or vector(0)) <= 1
+          )
+        for: 1m
+        labels:
+          severity: info
+          service: media-steering
+          control_action: steering_off
+        annotations:
+          summary: "Disable viewer steering"
+          description: "Viewer traffic can return to on-prem only after burst has already recovered."
+
+      - alert: BurstTrigger
+        expr: |
+          (
+            max(control_steering_enabled{cluster="onprem", namespace="ns-media-onprem"} or vector(0)) == 1
+          )
+          and
+          (
+            max(control_burst_enabled{cluster="onprem", namespace="ns-media-onprem"} or vector(0)) == 0
+          )
+          and
+          (
+            max(active_publishers{cluster="onprem", namespace="ns-media-onprem"} or vector(0)) >= 3
+          )
+        for: 1m
+        labels:
+          severity: warning
+          service: media-burst
+          control_action: burst_on
+        annotations:
+          summary: "Enable RTMP burst"
+          description: "New RTMP sessions can move to AWS only after viewer steering is already active."
+
+      - alert: BurstRecover
+        expr: |
+          (
+            max(control_burst_enabled{cluster="onprem", namespace="ns-media-onprem"} or vector(0)) == 1
+          )
+          and
+          (
+            max(active_publishers{cluster="onprem", namespace="ns-media-onprem"} or vector(0)) <= 2
+          )
+        for: 1m
+        labels:
+          severity: info
+          service: media-burst
+          control_action: burst_off
+        annotations:
+          summary: "Disable RTMP burst"
+          description: "New RTMP sessions can return to on-prem before viewer steering is disabled."

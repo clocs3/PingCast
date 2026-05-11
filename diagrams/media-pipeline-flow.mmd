@@ -1,0 +1,12 @@
+flowchart LR
+  OBS["OBS / RTMP publisher"] --> RTMP["nginx-rtmp"]
+  RTMP --> Notify["stream-controller /on_publish"]
+  Notify --> Auth["PostgreSQL stream_key_hash check"]
+  Notify --> RedisLive["Redis live:stream state"]
+  Notify --> Job["Kubernetes ffmpeg Job"]
+  Job --> LocalHLS["Node-local HLS files"]
+  LocalHLS --> Router["hls-router"]
+  Router --> Viewer["Live viewer"]
+  Job --> Uploader["s3-uploader sidecar"]
+  Uploader --> S3["S3 media bucket"]
+  S3 --> VOD["CloudFront VOD playback"]

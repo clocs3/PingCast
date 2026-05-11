@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: media-streaming-dev
+  namespace: argocd
+spec:
+  project: pingcast
+  source:
+    repoURL: ssh://git@gitlab.example.com:2222/pingcast/deploy-vpc1.git
+    targetRevision: main
+    path: apps/pingcast/media/overlays
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ns-media
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

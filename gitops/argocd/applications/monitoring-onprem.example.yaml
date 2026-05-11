@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-onprem
+  namespace: argocd
+spec:
+  project: pingcast-onprem
+  source:
+    repoURL: ssh://git@gitlab.example.com:2222/pingcast/deploy-vpc2.git
+    targetRevision: main
+    path: apps/pingcast/monitoring/overlays
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ns-observability-onprem
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

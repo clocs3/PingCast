@@ -1,0 +1,530 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: stream-controller
+  namespace: ns-media-onprem
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: stream-controller-job-manager
+  namespace: ns-media-onprem
+rules:
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["create", "get", "list", "watch", "delete"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: stream-controller-node-reader
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: stream-controller-job-manager
+  namespace: ns-media-onprem
+subjects:
+  - kind: ServiceAccount
+    name: stream-controller
+    namespace: ns-media-onprem
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: stream-controller-job-manager
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: stream-controller-node-reader
+subjects:
+  - kind: ServiceAccount
+    name: stream-controller
+    namespace: ns-media-onprem
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: stream-controller-node-reader
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stream-controller
+  namespace: ns-media-onprem
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: stream-controller
+  template:
+    metadata:
+      labels:
+        app: stream-controller
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8000"
+    spec:
+      serviceAccountName: stream-controller
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: stream-controller
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: media-role
+                    operator: NotIn
+                    values:
+                      - hls
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: stream-controller
+      imagePullSecrets:
+        - name: harbor-creds
+      containers:
+        - name: stream-controller
+          image: registry.example.com/pingcast/stream-controller-onprem:example
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+          env:
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: media-runtime-secrets
+                  key: redis-url
+            - name: POSTGRES_URL
+              valueFrom:
+                secretKeyRef:
+                  name: media-runtime-secrets
+                  key: postgres-url
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: media-runtime-secrets
+                  key: mongo-uri
+            - name: MONGO_DB_NAME
+              value: streaming
+            - name: MONGO_COLLECTION_VOD
+              value: user_vods
+            - name: K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: FFMPEG_IMAGE
+              value: registry.example.com/pingcast/ffmpeg-hls-onprem:30f7fcd817b5
+            - name: FFMPEG_SIDECAR_IMAGE
+              value: registry.example.com/pingcast/s3-uploader:59441d8ab56c
+            - name: FFMPEG_PULL_POLICY
+              value: Always
+            - name: FFMPEG_IMAGE_PULL_SECRET
+              value: harbor-creds
+            - name: FFMPEG_SERVICE_ACCOUNT_NAME
+              value: stream-controller
+            - name: FFMPEG_NODE_SELECTOR_KEY
+              value: media-role
+            - name: FFMPEG_NODE_SELECTOR_VALUE
+              value: hls
+            - name: FFMPEG_NODE_TAINT_KEY
+              value: media-role
+            - name: FFMPEG_NODE_TAINT_VALUE
+              value: hls
+            - name: FFMPEG_NODE_TAINT_EFFECT
+              value: NoSchedule
+            - name: RTMP_HOST
+              value: nginx-rtmp.ns-media-onprem.svc.cluster.local
+            - name: RTMP_PORT
+              value: "1935"
+            - name: RTMP_APP
+              value: live
+            - name: HLS_PVC_NAME
+              value: ""
+            - name: HLS_HOST_PATH
+              value: /data/ns-media-onprem/hls
+            - name: DISCONNECT_GRACE_SECONDS
+              value: "10"
+            - name: HLS_CLEANUP_ON_START
+              value: "true"
+            - name: HLS_CLEANUP_ON_EXIT
+              value: "false"
+            - name: ENABLE_HLS_ROUTE_DISCOVERY
+              value: "true"
+            - name: HLS_USE_NODE_INTERNAL_IP
+              value: "true"
+            - name: HLS_NODE_ENDPOINT_PORT
+              value: "8081"
+            - name: HLS_ROUTE_RECONCILE_SECONDS
+              value: "5"
+            - name: HLS_ROUTE_RECONCILE_LOCK_SECONDS
+              value: "15"
+            - name: OBJECT_STORAGE_PROVIDER
+              value: s3
+            - name: OBJECT_STORAGE_BUCKET
+              value: pingcast-media-archive-example
+            - name: OBJECT_STORAGE_PREFIX
+              value: hls
+            - name: OBJECT_STORAGE_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: media-runtime-secrets
+                  key: object-storage-endpoint
+                  optional: true
+            - name: OBJECT_STORAGE_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: media-runtime-secrets
+                  key: object-storage-access-key
+                  optional: true
+            - name: OBJECT_STORAGE_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: media-runtime-secrets
+                  key: object-storage-secret-key
+                  optional: true
+            - name: OBJECT_STORAGE_SECURE
+              value: "true"
+            - name: OBJECT_STORAGE_AUTO_CREATE_BUCKET
+              value: "false"
+            - name: AWS_REGION
+              value: ap-northeast-2
+            - name: UPLOAD_POLL_SECONDS
+              value: "2"
+            - name: SIDECAR_IDLE_EXIT_SECONDS
+              value: "45"
+            - name: UPLOAD_WORKERS
+              value: "4"
+            - name: OTEL_SERVICE_NAME
+              value: stream-controller
+            - name: OTEL_ENV
+              value: onprem
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://alloy-agent.ns-observability-onprem.svc.cluster.local:4318
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stream-controller
+  namespace: ns-media-onprem
+spec:
+  selector:
+    app: stream-controller
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: stream-controller
+  namespace: ns-media-onprem
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: stream-controller
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-rtmp
+  namespace: ns-media-onprem
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-rtmp
+  template:
+    metadata:
+      labels:
+        app: nginx-rtmp
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: nginx-rtmp
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: media-role
+                    operator: NotIn
+                    values:
+                      - hls
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: nginx-rtmp
+      imagePullSecrets:
+        - name: harbor-creds
+      containers:
+        - name: nginx-rtmp
+          image: registry.example.com/pingcast/nginx-rtmp-onprem:example
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 1935
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-rtmp
+  namespace: ns-media-onprem
+  labels:
+    expose: rtmp
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx-rtmp
+  ports:
+    - name: rtmp
+      port: 1935
+      targetPort: 1935
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: nginx-rtmp
+  namespace: ns-media-onprem
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: nginx-rtmp
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nginx-hls
+  namespace: ns-media-onprem
+spec:
+  selector:
+    matchLabels:
+      app: nginx-hls
+  template:
+    metadata:
+      labels:
+        app: nginx-hls
+    spec:
+      nodeSelector:
+        media-role: hls
+      tolerations:
+        - key: media-role
+          operator: Equal
+          value: hls
+          effect: NoSchedule
+      imagePullSecrets:
+        - name: harbor-creds
+      containers:
+        - name: nginx-hls
+          image: registry.example.com/pingcast/nginx-hls-onprem:example
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              hostPort: 8081
+          volumeMounts:
+            - name: hls-data
+              mountPath: /usr/share/nginx/html
+      volumes:
+        - name: hls-data
+          hostPath:
+            path: /data/ns-media-onprem/hls
+            type: DirectoryOrCreate
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-hls
+  namespace: ns-media-onprem
+  labels:
+    expose: hls
+spec:
+  selector:
+    app: nginx-hls
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hls-router
+  namespace: ns-media-onprem
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: hls-router
+  template:
+    metadata:
+      labels:
+        app: hls-router
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/metrics"
+        prometheus.io/port: "8000"
+    spec:
+      nodeSelector:
+        media-role: hls
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: hls-router
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app: hls-router
+      tolerations:
+        - key: media-role
+          operator: Equal
+          value: hls
+          effect: NoSchedule
+      imagePullSecrets:
+        - name: harbor-creds
+      containers:
+        - name: hls-router
+          image: registry.example.com/pingcast/hls-router-onprem:example
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          env:
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: media-runtime-secrets
+                  key: redis-url
+            - name: OTEL_SERVICE_NAME
+              value: hls-router
+            - name: OTEL_ENV
+              value: onprem
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://alloy-agent.ns-observability-onprem.svc.cluster.local:4318
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hls-router
+  namespace: ns-media-onprem
+spec:
+  selector:
+    app: hls-router
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: hls-router
+  namespace: ns-media-onprem
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: hls-router
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hls-router-ingress
+  namespace: ns-media-onprem
+  labels:
+    expose: hls
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hls-router
+                port:
+                  number: 8000

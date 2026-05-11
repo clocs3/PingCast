@@ -1,0 +1,406 @@
+{
+  "id": null,
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "count(sum by (pod) (container_last_seen{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"stream-controller.*\",container!=\"\",container!=\"POD\"}))",
+          "refId": "A"
+        }
+      ],
+      "title": "Controller Pods Up",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 0
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "count(max by (pod) (container_last_seen{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"ffmpeg-.*\",container!=\"\",container!=\"POD\"}) > time() - 60) or vector(0)",
+          "refId": "A"
+        }
+      ],
+      "title": "Active Publishers",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 8,
+        "y": 0
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "count(max by (pod) (container_last_seen{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"ffmpeg-placeholder.*\",container!=\"\",container!=\"POD\"}) > time() - 60) or vector(0)",
+          "refId": "A"
+        }
+      ],
+      "title": "Placeholder Pods",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        }
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 12,
+        "y": 0
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "max(ffmpeg_pending_streams{cluster=\"$cluster\",namespace=\"$namespace\"}) or vector(0)",
+          "refId": "A"
+        }
+      ],
+      "title": "Pending FFmpeg",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cores"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 16,
+        "y": 0
+      },
+      "options": {
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"ffmpeg-.*\",container!=\"\",container!=\"POD\"}[5m])) or vector(0)",
+          "refId": "A"
+        }
+      ],
+      "title": "FFmpeg CPU",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 0
+      },
+      "options": {
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"ffmpeg-.*\",container!=\"\",container!=\"POD\"}) or vector(0)",
+          "refId": "A"
+        }
+      ],
+      "title": "FFmpeg Memory",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "cores"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 4
+      },
+      "options": {
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"stream-controller.*\",container!=\"\",container!=\"POD\"}[5m])) or vector(0)",
+          "refId": "A"
+        }
+      ],
+      "title": "Controller CPU",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 4
+      },
+      "options": {
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"stream-controller.*\",container!=\"\",container!=\"POD\"}) or vector(0)",
+          "refId": "A"
+        }
+      ],
+      "title": "Controller Memory",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 4
+      },
+      "options": {
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_network_receive_bytes_total{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"stream-controller.*\"}[5m]) + rate(container_network_transmit_bytes_total{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"stream-controller.*\"}[5m])) or vector(0)",
+          "refId": "A"
+        }
+      ],
+      "title": "Controller Network",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "expr": "max by (pod, instance) (container_last_seen{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"ffmpeg-.*|stream-controller.*\",container!=\"\",container!=\"POD\"}) > time() - 60",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Controller / FFmpeg Pods By Node",
+      "type": "table"
+    },
+    {
+      "datasource": "Loki",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 16
+      },
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "showTime": true,
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "expr": "{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\"} |~ \"(FFMPEG|on_publish|on_done|ERROR|error)\"",
+          "refId": "A"
+        }
+      ],
+      "title": "Controller / FFmpeg Errors",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "media",
+    "transcode",
+    "ffmpeg"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "aws",
+          "value": "aws"
+        },
+        "includeAll": false,
+        "multi": false,
+        "name": "cluster",
+        "options": [
+          {
+            "selected": true,
+            "text": "aws",
+            "value": "aws"
+          },
+          {
+            "selected": false,
+            "text": "onprem",
+            "value": "onprem"
+          }
+        ],
+        "query": "aws,onprem",
+        "type": "custom"
+      },
+      {
+        "current": {
+          "text": "ns-media-onprem",
+          "value": "ns-media-onprem"
+        },
+        "includeAll": false,
+        "multi": false,
+        "name": "namespace",
+        "hide": 2,
+        "options": [
+          {
+            "selected": true,
+            "text": "ns-media-onprem",
+            "value": "ns-media-onprem"
+          }
+        ],
+        "query": "ns-media-onprem,ns-media",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "title": "Media 03 - Transcode (Controller/FFmpeg)",
+  "uid": "media-03-transcode",
+  "version": 2
+}

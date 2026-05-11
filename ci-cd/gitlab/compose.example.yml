@@ -1,0 +1,23 @@
+services:
+  gitlab:
+    image: gitlab/gitlab-ee:18.8.4-ee.0
+    container_name: gitlab
+    restart: always
+    hostname: "gitlab.example.com"
+    shm_size: "256m"
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://gitlab.example.com'
+        letsencrypt['enable'] = false
+        nginx['redirect_http_to_https'] = true
+        nginx['ssl_certificate'] = "/etc/gitlab/ssl/server.crt"
+        nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/server.key"
+        gitlab_rails['gitlab_shell_ssh_port'] = 2222
+    ports:
+      - "80:80"
+      - "443:443"
+      - "2222:22"
+    volumes:
+      - /data/gitlab/config:/etc/gitlab
+      - /data/gitlab/logs:/var/log/gitlab
+      - /data/gitlab/data:/var/opt/gitlab

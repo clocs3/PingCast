@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../base
+
+images:
+  - name: registry.example.com/pingcast/nginx-rtmp-aws
+    newTag: 7585afb35cb2
+  - name: registry.example.com/pingcast/stream-controller-aws
+    newTag: 59441d8ab56c
+  - name: registry.example.com/pingcast/ffmpeg-hls-aws
+    newTag: 7585afb35cb2
+  - name: registry.example.com/pingcast/s3-uploader
+    newTag: ea67dde5db50

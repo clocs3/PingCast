@@ -1,0 +1,32 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ListBucketForHlsPrefix",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket",
+        "s3:ListBucketMultipartUploads"
+      ],
+      "Resource": "arn:aws:s3:::pingcast-media-archive-example",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "hls",
+            "hls/*"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "ObjectAccessForHlsPrefix",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:AbortMultipartUpload",
+        "s3:ListMultipartUploadParts"
+      ],
+      "Resource": "arn:aws:s3:::pingcast-media-archive-example/hls/*"
+    }
+  ]
+}

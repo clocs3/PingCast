@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../base
+
+images:
+  - name: registry.example.com/pingcast/nginx-rtmp-onprem
+    newTag: 30f7fcd817b5
+  - name: registry.example.com/pingcast/stream-controller-onprem
+    newTag: ea67dde5db50
+  - name: registry.example.com/pingcast/ffmpeg-hls-onprem
+    newTag: 30f7fcd817b5
+  - name: registry.example.com/pingcast/s3-uploader
+    newTag: 59441d8ab56c
+  - name: registry.example.com/pingcast/nginx-hls-onprem
+    newTag: 30f7fcd817b5
+  - name: registry.example.com/pingcast/hls-router-onprem
+    newTag: cebda94f1001

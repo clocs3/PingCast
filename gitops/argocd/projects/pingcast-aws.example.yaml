@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: pingcast
+  namespace: argocd
+spec:
+  description: Pingcast team applications
+  sourceRepos:
+    - ssh://git@gitlab.example.com:2222/pingcast/deploy-vpc1.git
+    - public.ecr.aws/karpenter
+    - https://aws.github.io/eks-charts
+  destinations:
+    - namespace: kube-system
+      server: https://kubernetes.default.svc
+    - namespace: karpenter
+      server: https://kubernetes.default.svc
+    - namespace: ns-web
+      server: https://kubernetes.default.svc
+    - namespace: ns-auth
+      server: https://kubernetes.default.svc
+    - namespace: ns-streams
+      server: https://kubernetes.default.svc
+    - namespace: ns-chat
+      server: https://kubernetes.default.svc
+    - namespace: ns-categories
+      server: https://kubernetes.default.svc
+    - namespace: ns-media
+      server: https://kubernetes.default.svc
+    - namespace: ns-observability
+      server: https://kubernetes.default.svc
+    - namespace: ns-observ-ai
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

@@ -1,0 +1,18 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::123456789012:oidc-provider/REPLACE_OIDC_HOSTPATH"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          "REPLACE_OIDC_HOSTPATH:aud": "sts.amazonaws.com",
+          "REPLACE_OIDC_HOSTPATH:sub": "system:serviceaccount:ns-media:stream-controller"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+
+services:
+  nginx-rtmp:
+    build: .
+    image: registry.example.com/library/nginx-rtmp:example
+    container_name: nginx-rtmp
+    ports:
+      - "1935:1935"

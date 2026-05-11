@@ -1,0 +1,17 @@
+stateDiagram-v2
+  [*] --> NORMAL
+  NORMAL --> STEERING: on-prem publishers >= threshold
+  STEERING --> STEERING_BURST: steering enabled and publisher load remains high
+  STEERING_BURST --> RECOVERING: on-prem publishers recover
+  RECOVERING --> STEERING: burst_off complete
+  STEERING --> NORMAL: steering_off after burst disabled
+
+  note right of STEERING
+    Viewer path moves first:
+    hls.example.com on-prem -> CDN
+  end note
+
+  note right of STEERING_BURST
+    New RTMP sessions move after steering:
+    stream.example.com on-prem -> AWS burst
+  end note

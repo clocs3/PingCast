@@ -1,0 +1,362 @@
+{
+  "id": null,
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "count(sum by (pod) (container_last_seen{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"nginx-rtmp.*\",container!=\"\",container!=\"POD\"}))",
+          "refId": "A"
+        }
+      ],
+      "title": "RTMP Pods Up",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "options": {
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_network_receive_bytes_total{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"nginx-rtmp.*\"}[5m]))",
+          "refId": "A"
+        }
+      ],
+      "title": "RTMP RX",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "options": {
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(container_network_transmit_bytes_total{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"nginx-rtmp.*\"}[5m]))",
+          "refId": "A"
+        }
+      ],
+      "title": "RTMP TX",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "options": {
+        "graphMode": "none",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "targets": [
+        {
+          "expr": "sum(container_memory_working_set_bytes{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"nginx-rtmp.*\",container!=\"\"})",
+          "refId": "A"
+        }
+      ],
+      "title": "RTMP Memory",
+      "type": "stat"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 0,
+        "y": 4
+      },
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "expr": "sum by (pod) (rate(container_network_receive_bytes_total{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"nginx-rtmp.*\"}[5m]))",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "RTMP Pod RX",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "cluster": true,
+              "namespace": true
+            },
+            "indexByName": {
+              "pod": 0,
+              "Value": 1
+            },
+            "renameByName": {
+              "Value": "RX",
+              "pod": "RTMP Pod"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "RX"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": "Prometheus",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 6,
+        "x": 6,
+        "y": 4
+      },
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "expr": "sum by (pod) (rate(container_network_transmit_bytes_total{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"nginx-rtmp.*\"}[5m]))",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "RTMP Pod TX",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "__name__": true,
+              "cluster": true,
+              "namespace": true
+            },
+            "indexByName": {
+              "pod": 0,
+              "Value": 1
+            },
+            "renameByName": {
+              "Value": "TX",
+              "pod": "RTMP Pod"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "fields": {},
+            "sort": [
+              {
+                "desc": true,
+                "field": "TX"
+              }
+            ]
+          }
+        }
+      ],
+      "type": "table"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "targets": [
+        {
+          "expr": "max by (pod, instance) (container_last_seen{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\",pod=~\"nginx-rtmp.*\",container!=\"\",container!=\"POD\"}) > time() - 60",
+          "format": "table",
+          "instant": true,
+          "refId": "A"
+        }
+      ],
+      "title": "RTMP Pods By Node",
+      "type": "table"
+    },
+    {
+      "datasource": "Loki",
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "showTime": true,
+        "wrapLogMessage": true
+      },
+      "targets": [
+        {
+          "expr": "{cluster=\"$cluster\",namespace=~\"ns-media|ns-media-onprem\", app=\"nginx-rtmp\"}",
+          "refId": "A"
+        }
+      ],
+      "title": "RTMP Logs",
+      "type": "logs"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "tags": [
+    "media",
+    "ingest",
+    "rtmp"
+  ],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "aws",
+          "value": "aws"
+        },
+        "includeAll": false,
+        "multi": false,
+        "name": "cluster",
+        "options": [
+          {
+            "selected": true,
+            "text": "aws",
+            "value": "aws"
+          },
+          {
+            "selected": false,
+            "text": "onprem",
+            "value": "onprem"
+          }
+        ],
+        "query": "aws,onprem",
+        "type": "custom"
+      },
+      {
+        "current": {
+          "text": "ns-media-onprem",
+          "value": "ns-media-onprem"
+        },
+        "includeAll": false,
+        "multi": false,
+        "name": "namespace",
+        "hide": 2,
+        "options": [
+          {
+            "selected": true,
+            "text": "ns-media-onprem",
+            "value": "ns-media-onprem"
+          }
+        ],
+        "query": "ns-media-onprem,ns-media",
+        "type": "custom"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-30m",
+    "to": "now"
+  },
+  "title": "Media 02 - Ingest (RTMP)",
+  "uid": "media-02-ingest",
+  "version": 2
+}

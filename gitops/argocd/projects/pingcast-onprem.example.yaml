@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: pingcast-onprem
+  namespace: argocd
+spec:
+  description: Pingcast on-prem media applications
+  sourceRepos:
+    - ssh://git@gitlab.example.com:2222/pingcast/deploy-vpc2.git
+    - https://aws.github.io/eks-charts
+  destinations:
+    - namespace: ns-media-onprem
+      server: https://kubernetes.default.svc
+    - namespace: ns-observability-onprem
+      server: https://kubernetes.default.svc
+    - namespace: kube-system
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"
