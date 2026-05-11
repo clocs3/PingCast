@@ -12,12 +12,11 @@ README는 repository 구조를 빠르게 파악하기 위한 안내용으로 사
 | [media/](media) | On-Prem/AWS media component source |
 | [onprem/](onprem) | On-Prem Kubernetes media workload manifest |
 | [aws/](aws) | AWS EKS burst path, Karpenter, IRSA, Route53 Lambda |
-| [data-contracts/](data-contracts) | PostgreSQL, MongoDB, Redis contract와 backend integration 예시 |
-| [ci-cd/](ci-cd) | Jenkins, GitLab, Harbor, Trivy 기반 CI/CD 예시 |
+| [data-contracts/](data-contracts) | PostgreSQL, MongoDB, Redis contract와 backend integration |
+| [ci-cd/](ci-cd) | Jenkins, GitLab, Harbor, Trivy 기반 CI/CD |
 | [gitops/](gitops) | Argo CD Application/AppProject 예시 |
-| [monitoring/](monitoring) | Prometheus, Alertmanager, Alloy, Grafana 예시 |
+| [monitoring/](monitoring) | Prometheus, Alertmanager, Alloy, Grafana |
 | [diagrams/](diagrams) | Architecture diagram과 Mermaid source |
-| [screenshots/](screenshots) | 실행 화면 증거를 둘 위치 |
 
 ## Reference Docs
 
